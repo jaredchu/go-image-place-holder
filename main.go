@@ -24,9 +24,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	debug := r.FormValue("debug")
 	key := strconv.Itoa(width + height)
 	context := appengine.NewContext(r)
-	if item, err := memcache.Get(context, key); err == memcache.ErrCacheMiss {
+	if item, err := memcache.Get(context, key); len(debug) > 0 || err == memcache.ErrCacheMiss {
 		// Not cached yet
 		img := image.NewRGBA(image.Rect(0, 0, width, height))
 		for x := 0; x < width; x++ {
