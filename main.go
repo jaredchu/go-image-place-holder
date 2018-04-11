@@ -18,7 +18,7 @@ func init() {
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-	width, height := getDimension(r, 100, 100)
+	width, height := getDimension(strings.Trim(r.URL.Path, "/"), 100, 100)
 	if (width > 4000 || height > 4000) {
 		fmt.Fprint(w, "Image size is too big")
 		return
@@ -58,8 +58,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getDimension(r *http.Request, defaultWidth int, defaultHeight int) (int, int) {
-	path := strings.Trim(r.URL.Path, "/");
+func getDimension(path string, defaultWidth int, defaultHeight int) (int, int) {
 	dArray := strings.Split(path, "x")
 	if (len(dArray) == 2) {
 		width, err := strconv.Atoi(dArray[0])
