@@ -11,6 +11,9 @@ import (
 	"google.golang.org/appengine/memcache"
 	"bytes"
 	"google.golang.org/appengine"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 )
 
 func init() {
@@ -35,6 +38,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 				img.Set(x, y, color.RGBA{204, 204, 204, 1})
 			}
 		}
+		addLabel(img,width/2,height/2,strconv.Itoa(width))
 
 		// cache the image
 		item := &memcache.Item{
@@ -83,11 +87,25 @@ func getDimension(path string, defaultWidth int, defaultHeight int) (int, int) {
 	}
 }
 
-func imgToByte(img image.Image) []byte{
+func imgToByte(img image.Image) []byte {
 	buf := new(bytes.Buffer)
 	err := jpeg.Encode(buf, img, nil)
-	if err != nil{
+	if err != nil {
 		return []byte("")
 	}
 	return buf.Bytes()
+}
+
+func addLabel(img *image.RGBA, x, y int, label string) {
+	col := color.RGBA{134, 134, 134, 1}
+	point := fixed.Point26_6{fixed.Int26_6(x * 64), fixed.Int26_6(y * 64)}
+	basicFont := basicfont.Face7x13
+
+	d := &font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(col),
+		Face: basicFont,
+		Dot:  point,
+	}
+	d.DrawString(label)
 }
