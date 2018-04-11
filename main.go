@@ -7,6 +7,7 @@ import (
 	"image/jpeg"
 	"strings"
 	"strconv"
+	"fmt"
 )
 
 func init() {
@@ -15,6 +16,11 @@ func init() {
 
 func home(w http.ResponseWriter, r *http.Request) {
 	width, height := getDimension(r, 100, 100)
+	if (width > 4000 || height > 4000){
+		fmt.Fprint(w,"Dismension is too big")
+		return
+	}
+
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
