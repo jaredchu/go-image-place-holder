@@ -11,9 +11,20 @@ import (
 	"google.golang.org/appengine/memcache"
 	"bytes"
 	"google.golang.org/appengine"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/math/fixed"
+	"github.com/golang/freetype"
+	"image/draw"
+	"log"
+	"io/ioutil"
+	"flag"
+)
+
+var (
+	dpi      = flag.Float64("dpi", 100, "screen resolution in Dots Per Inch")
+	fontfile = flag.String("fontfile", "./luxisr.ttf", "filename of the ttf font")
+	hinting  = flag.String("hinting", "none", "none | full")
+	size     = flag.Float64("size", 24, "font size in points")
+	spacing  = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
+	wonb     = flag.Bool("whiteonblack", false, "white text on a black background")
 )
 
 func init() {
@@ -38,7 +49,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 				img.Set(x, y, color.RGBA{204, 204, 204, 1})
 			}
 		}
-		addLabel(img,width/2,height/2,strconv.Itoa(width))
+		addLabel(img,10,10,strconv.Itoa(width))
 
 		// cache the image
 		item := &memcache.Item{
@@ -97,15 +108,33 @@ func imgToByte(img image.Image) []byte {
 }
 
 func addLabel(img *image.RGBA, x, y int, label string) {
-	col := color.RGBA{134, 134, 134, 1}
-	point := fixed.Point26_6{fixed.Int26_6(x * 64), fixed.Int26_6(y * 64)}
-	basicFont := basicfont.Face7x13
-
-	d := &font.Drawer{
-		Dst:  img,
-		Src:  image.NewUniform(col),
-		Face: basicFont,
-		Dot:  point,
+	// Read the font data.
+	fontBytes, err := ioutil.ReadFile(*fontfile)
+	if err != nil {
+		log.Println(err)
+		return
 	}
-	d.DrawString(label)
+	f, err := freetype.ParseFont(fontBytes)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// Initialize the context.
+	fg, bg := image.NewUniform(color.RGBA{152,152,152,1}), img
+	draw.Draw(img, img.Bounds(), bg, image.ZP, draw.Src)
+	c := freetype.NewContext()
+	c.SetDPI(*dpi)
+	c.SetFont(f)
+	c.SetFontSize(*size)
+	c.SetClip(img.Bounds())
+	c.SetDst(img)
+	c.SetSrc(fg)
+
+	size := 18.0 // font size in pixels
+	pt := freetype.Pt(x, y+int(c.PointToFixed(size)>>6))
+
+	if _, err := c.DrawString(label, pt); err != nil {
+		// handle error
+	}
 }
